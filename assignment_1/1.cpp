@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -10,15 +11,15 @@ int main()
 
     long long a, b;
     char op;
-    string line;
-
-    getline(inp, line);
-    int index_first_del = line.find(",");
-    int index_last_del = line.find_last_of(",");
-    a = stoll(line.substr(0, index_first_del));
-    b = stoll(line.substr(index_first_del + 1, index_last_del - index_first_del - 1));
-    op = line.at(index_last_del + 1);
-
+    string tmp;
+    
+    getline(inp, tmp, ',');
+    a = stoll(tmp);
+    getline(inp, tmp, ',');
+    b = stoll(tmp);
+    getline(inp, tmp, ',');
+    op = tmp.at(0);
+    
     out << fixed;
     switch (op)
     {
@@ -39,7 +40,7 @@ int main()
         break;
 
     default:
-        out << line << endl;
+        out << "not implemented" << endl;
         break;
     }
     inp.close();
