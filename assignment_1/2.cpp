@@ -25,35 +25,30 @@ string multiply(string a, string b)
     return out;
 }
 
+string solve(string a, string b, string op)
+{
+    if (op == "-")
+        return subtract(a, b);
+    else if (op == "+")
+        return add(a, b);
+    else if (op == "*")
+        return multiply(a, b);
+    else
+        return "not implemented";
+}
+
 int main()
 {
     ifstream inp("input.txt");
     ofstream out("output.txt");
 
-    string a, b, tmp;
-    char op;
+    string a, b, op;
     
     getline(inp, a, ',');
     getline(inp, b, ',');
-    getline(inp, tmp, ',');
-    op = tmp.at(0);
-
-    switch (op)
-    {
-    case '-':
-        out << subtract(a, b) << endl;
-        break;
-    case '+':
-        out << add(a, b) << endl;
-        break;
-    case '*':
-        out << multiply(a, b) << endl;
-        break;
-
-    default:
-        out << "not implemented" << endl;
-        break;
-    }
+    getline(inp, op, ',');
+    
+    out << solve(a, b, op) << endl;
 
     inp.close();
     out.close();
