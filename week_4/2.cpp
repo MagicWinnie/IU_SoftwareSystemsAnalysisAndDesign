@@ -29,7 +29,7 @@ public:
     }
 };
 
-class Cat : Animal
+class Cat : public Animal
 {
 public:
     Cat(string name) : Animal(name) {}
