@@ -43,11 +43,11 @@ int main()
     ofstream out("output.txt");
 
     string a, b, op;
-    
+
     getline(inp, a, ',');
     getline(inp, b, ',');
     getline(inp, op, ',');
-    
+
     out << solve(a, b, op) << endl;
 
     inp.close();

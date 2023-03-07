@@ -9,8 +9,9 @@ class Product
 protected:
     int width, height, price;
     string color;
+
 public:
-    Product(int w, int h, int p, string c) : width(w), height(h), price(p), color(c) {};
+    Product(int w, int h, int p, string c) : width(w), height(h), price(p), color(c){};
     virtual void printType() = 0;
     virtual void printSize() = 0;
     virtual int getPrice() = 0;
@@ -19,7 +20,7 @@ public:
 class TShirt : public Product
 {
 public:
-    TShirt(int w, int h, int p, string c) : Product(w, h, p, c) {};
+    TShirt(int w, int h, int p, string c) : Product(w, h, p, c){};
     void printType() override
     {
         cout << "I am " << color << " t-shirt" << endl;
@@ -37,7 +38,7 @@ public:
 class Pants : public Product
 {
 public:
-    Pants(int w, int h, int p, string c) : Product(w, h, p, c) {};
+    Pants(int w, int h, int p, string c) : Product(w, h, p, c){};
     void printType() override
     {
         cout << "I am " << color << " pants" << endl;
@@ -55,7 +56,7 @@ public:
 class Sweater : public Product
 {
 public:
-    Sweater(int w, int h, int p, string c) : Product(w, h, p, c) {};
+    Sweater(int w, int h, int p, string c) : Product(w, h, p, c){};
     void printType() override
     {
         cout << "I am " << color << " sweater" << endl;

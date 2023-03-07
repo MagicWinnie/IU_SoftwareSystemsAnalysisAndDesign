@@ -13,6 +13,7 @@ private:
     {
         return balance >= money;
     }
+
 public:
     BankAccount(string name, double balance)
     {
@@ -30,7 +31,7 @@ public:
         else
             cout << "Not enough money" << endl;
     }
-    void printMoney() 
+    void printMoney()
     {
         cout << balance << endl;
     }

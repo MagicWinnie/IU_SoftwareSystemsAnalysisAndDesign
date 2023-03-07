@@ -11,14 +11,14 @@ int main()
     long long a, b;
     char op;
     string tmp;
-    
+
     getline(inp, tmp, ',');
     a = stoll(tmp);
     getline(inp, tmp, ',');
     b = stoll(tmp);
     getline(inp, tmp, ',');
     op = tmp.at(0);
-    
+
     out << fixed;
     switch (op)
     {

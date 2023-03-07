@@ -1,7 +1,9 @@
 #include <iostream>
 #include <cmath>
 #define ull unsigned long long
-#define OPENFILES freopen("input.txt", "r", stdin);freopen("output.txt", "w", stdout);
+#define OPENFILES                     \
+    freopen("input.txt", "r", stdin); \
+    freopen("output.txt", "w", stdout);
 
 using namespace std;
 
