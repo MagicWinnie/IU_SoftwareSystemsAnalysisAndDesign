@@ -1,4 +1,6 @@
 #include <iostream>
+#include <iomanip>
+#include <cmath>
 
 using namespace std;
 
@@ -6,7 +8,7 @@ class Matrix
 {
 protected:
     int rows = 0, cols = 0;
-    int **matrix;
+    double **matrix;
 
 public:
     Matrix(int rows, int cols)
@@ -14,13 +16,13 @@ public:
         this->rows = rows;
         this->cols = cols;
 
-        matrix = new int *[rows];
+        matrix = new double *[rows];
         for (int i = 0; i < rows; i++)
-            matrix[i] = new int[cols];
+            matrix[i] = new double[cols];
 
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
-                matrix[i][j] = 0;
+                matrix[i][j] = 0.0;
     }
     ~Matrix()
     {
@@ -53,7 +55,7 @@ public:
         }
         return out;
     }
-    int *operator[](int i)
+    double *operator[](int i)
     {
         return matrix[i];
     }
@@ -69,9 +71,9 @@ public:
         rows = old.rows;
         cols = old.cols;
 
-        matrix = new int *[rows];
+        matrix = new double *[rows];
         for (int i = 0; i < rows; i++)
-            matrix[i] = new int[cols];
+            matrix[i] = new double[cols];
 
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
@@ -118,17 +120,22 @@ public:
                 (*B)[j][i] = matrix[i][j];
         return B;
     }
+    friend Matrix *DirectElimination(Matrix *A, bool debug_info);
 };
 
 class SquareMatrix : public Matrix
 {
+protected:
+    int size;
+
 public:
     SquareMatrix(int size) : Matrix(size, size)
     {
+        this->size = size;
     }
     int get_size()
     {
-        return cols;
+        return size;
     }
     SquareMatrix *operator+(SquareMatrix &B)
     {
@@ -161,6 +168,14 @@ public:
         SquareMatrix *C = (SquareMatrix *)(upcast_C);
         return C;
     }
+    double determinant(bool debug_info)
+    {
+        SquareMatrix *U = (SquareMatrix *)DirectElimination(this, true);
+        double res = 1.0;
+        for (int i = 0; i < size; i++)
+            res *= (*U)[i][i];
+        return res;
+    }
 };
 
 class IdentityMatrix : public SquareMatrix
@@ -169,16 +184,16 @@ public:
     IdentityMatrix(int size) : SquareMatrix(size)
     {
         for (int i = 0; i < size; i++)
-            matrix[i][i] = 1;
+            matrix[i][i] = 1.0;
     }
 };
 
 class EliminationMatrix : public IdentityMatrix
 {
 public:
-    EliminationMatrix(int size, int i, int j, SquareMatrix *M) : IdentityMatrix(size)
+    EliminationMatrix(int size, int i, int j, double val) : IdentityMatrix(size)
     {
-        matrix[i][j] = (*M)[i][j] * -1;
+        matrix[i][j] = val * -1.0;
     }
 };
 
@@ -190,6 +205,57 @@ public:
         swap(matrix[i], matrix[j]);
     }
 };
+
+Matrix *DirectElimination(Matrix *A, bool debug_info)
+{
+    Matrix *U = A;
+    int curr_col = 0;
+    int step = 1;
+    int rows = A->get_rows();
+    for (int i = 0; i < rows; i++)
+    {
+        int row_with_max_pivot = -1;
+        int max_pivot = U->matrix[i][curr_col];
+        for (int j = i + 1; j < rows; j++)
+        {
+            if (U->matrix[j][curr_col] == 0.0)
+                continue;
+            if (abs(U->matrix[j][curr_col]) > abs(max_pivot))
+            {
+                row_with_max_pivot = j;
+                max_pivot = U->matrix[j][curr_col];
+            }
+        }
+        if (row_with_max_pivot != -1)
+        {
+            if (debug_info)
+                cout << "step #" << step << ": permutation\n";
+            PermutationMatrix *P = new PermutationMatrix(rows, i, row_with_max_pivot);
+            U = (*(Matrix *)P) * (*U);
+            if (debug_info)
+            {
+                cout << *U;
+                step++;
+            }
+        }
+        for (int j = i + 1; j < rows; j++)
+        {
+            if (U->matrix[j][curr_col] == 0.0 || U->matrix[i][curr_col] == 0.0)
+                continue;
+            if (debug_info)
+                cout << "step #" << step << ": elimination\n";
+            EliminationMatrix *E = new EliminationMatrix(rows, j, i, (*U)[j][curr_col] / (*U)[i][curr_col]);
+            U = (*(Matrix *)E) * (*U);
+            if (debug_info)
+            {
+                cout << *U;
+                step++;
+            }
+        }
+        curr_col++;
+    }
+    return U;
+}
 
 SquareMatrix *read_matrix()
 {
@@ -204,22 +270,13 @@ SquareMatrix *read_matrix()
 
 int main(void)
 {
+    cout << fixed << setprecision(2);
+
     SquareMatrix *A = read_matrix();
 
-    IdentityMatrix *I = new IdentityMatrix(3);
-    cout << *I;
-
-    EliminationMatrix *E_21 = new EliminationMatrix(A->get_size(), 2 - 1, 1 - 1, A);
-    cout << *E_21;
-
-    SquareMatrix *B = (*E_21) * (*A);
-    cout << *B;
-
-    PermutationMatrix *P_21 = new PermutationMatrix(A->get_size(), 2 - 1, 1 - 1);
-    cout << *P_21;
-
-    SquareMatrix *C = (*P_21) * (*A);
-    cout << *C;
+    double det = A->determinant(true);
+    cout << "result:\n"
+         << det << endl;
 
     return 0;
 }
