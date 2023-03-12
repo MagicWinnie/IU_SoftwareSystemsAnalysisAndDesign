@@ -170,7 +170,7 @@ public:
     }
     double determinant(bool debug_info)
     {
-        SquareMatrix *U = (SquareMatrix *)DirectElimination(this, true);
+        SquareMatrix *U = (SquareMatrix *)DirectElimination(this, debug_info);
         double res = 1.0;
         for (int i = 0; i < size; i++)
             res *= (*U)[i][i];
@@ -215,7 +215,7 @@ Matrix *DirectElimination(Matrix *A, bool debug_info)
     for (int i = 0; i < rows; i++)
     {
         int row_with_max_pivot = -1;
-        int max_pivot = U->matrix[i][curr_col];
+        double max_pivot = U->matrix[i][curr_col];
         for (int j = i + 1; j < rows; j++)
         {
             if (U->matrix[j][curr_col] == 0.0)

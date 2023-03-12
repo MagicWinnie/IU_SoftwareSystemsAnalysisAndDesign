@@ -50,7 +50,7 @@ public:
         for (int i = 0; i < m.rows; i++)
         {
             for (int j = 0; j < m.cols; j++)
-                out << m[i][j] << ' ';
+                out << ((abs(m[i][j]) <= 1e-6 and signbit(m[i][j])) ? 0.0 : m[i][j]) << ' ';
             out << '\n';
         }
         return out;
@@ -207,14 +207,23 @@ public:
     }
 };
 
+class ColumnVector : public Matrix
+{
+public:
+    ColumnVector(int size) : Matrix(size, 1)
+    {
+    }
+};
+
+template <typename L, typename R>
 class AugmentedMatrix
 {
 protected:
-    Matrix *matrixLeft;
-    Matrix *matrixRight;
+    L *matrixLeft;
+    R *matrixRight;
 
 public:
-    AugmentedMatrix(Matrix *A, Matrix *B)
+    AugmentedMatrix(L *A, R *B)
     {
         if (A->get_rows() != B->get_rows())
             throw runtime_error("Error: the dimensional problem occurred");
@@ -226,137 +235,128 @@ public:
         delete[] matrixLeft;
         delete[] matrixRight;
     }
-    Matrix *getLeft()
+    L *getLeft()
     {
         return matrixLeft;
     }
-    Matrix *getRight()
+    R *getRight()
     {
         return matrixRight;
     }
     friend ostream &operator<<(ostream &out, AugmentedMatrix &m)
     {
-        for (int i = 0; i < m.matrixLeft->get_rows(); i++)
-        {
-            for (int j = 0; j < m.matrixLeft->get_cols(); j++)
-                out << (*m.matrixLeft)[i][j] << ' ';
-            for (int j = 0; j < m.matrixRight->get_cols(); j++)
-                out << (*m.matrixRight)[i][j] << ' ';
-            out << '\n';
-        }
+        out << *m.getLeft() << *m.getRight();
         return out;
     }
-    friend AugmentedMatrix *ForwardElimination(AugmentedMatrix *A, bool debug_info, int *last_step);
-    friend AugmentedMatrix *BackwardElimination(AugmentedMatrix *A, bool debug_info, int *last_step);
+    AugmentedMatrix<L, R> *ForwardElimination(bool debug_info, int *last_step)
+    {
+        AugmentedMatrix<L, R> *U = this;
+        int curr_col = 0;
+        int rows = matrixLeft->get_rows();
+        for (int i = 0; i < rows; i++)
+        {
+            int row_with_max_pivot = -1;
+            double max_pivot = (*U->matrixLeft)[i][curr_col];
+            for (int j = i + 1; j < rows; j++)
+            {
+                if ((*U->matrixLeft)[j][curr_col] == 0.0)
+                    continue;
+                if (abs((*U->matrixLeft)[j][curr_col]) > abs(max_pivot))
+                {
+                    row_with_max_pivot = j;
+                    max_pivot = (*U->matrixLeft)[j][curr_col];
+                }
+            }
+            if (row_with_max_pivot != -1)
+            {
+                if (debug_info)
+                    cout << "step #" << *last_step << ": permutation\n";
+                PermutationMatrix *P = new PermutationMatrix(rows, i, row_with_max_pivot);
+                U->matrixLeft = (L *)((*(Matrix *)P) * (*(Matrix *)U->matrixLeft));
+                U->matrixRight = (R *)((*(Matrix *)P) * (*(Matrix *)U->matrixRight));
+                if (debug_info)
+                {
+                    cout << *U;
+                    (*last_step)++;
+                }
+            }
+            for (int j = i + 1; j < rows; j++)
+            {
+                if ((*U->matrixLeft)[j][curr_col] == 0.0 || (*U->matrixLeft)[i][curr_col] == 0.0)
+                    continue;
+                if (debug_info)
+                    cout << "step #" << *last_step << ": elimination\n";
+                EliminationMatrix *E = new EliminationMatrix(rows, j, i, (*U->matrixLeft)[j][curr_col] / (*U->matrixLeft)[i][curr_col]);
+                U->matrixLeft = (L *)((*(Matrix *)E) * (*(Matrix *)U->matrixLeft));
+                U->matrixRight = (R *)((*(Matrix *)E) * (*(Matrix *)U->matrixRight));
+                if (debug_info)
+                {
+                    cout << *U;
+                    (*last_step)++;
+                }
+            }
+            curr_col++;
+        }
+        return U;
+    }
+    AugmentedMatrix<L, R> *BackwardElimination(bool debug_info, int *last_step)
+    {
+        AugmentedMatrix<L, R> *U = this;
+        int curr_col = matrixLeft->get_cols() - 1;
+        int rows = matrixLeft->get_rows();
+        for (int i = rows - 1; i >= 0; i--)
+        {
+            for (int j = i - 1; j >= 0; j--)
+            {
+                if ((*U->matrixLeft)[j][curr_col] == 0.0 || (*U->matrixLeft)[i][curr_col] == 0.0)
+                    continue;
+                if (debug_info)
+                    cout << "step #" << *last_step << ": elimination\n";
+                EliminationMatrix *E = new EliminationMatrix(rows, j, i, (*U->matrixLeft)[j][curr_col] / (*U->matrixLeft)[i][curr_col]);
+                U->matrixLeft = (L *)((*(Matrix *)E) * (*(Matrix *)U->matrixLeft));
+                U->matrixRight = (R *)((*(Matrix *)E) * (*(Matrix *)U->matrixRight));
+                if (debug_info)
+                {
+                    cout << *U;
+                    (*last_step)++;
+                }
+            }
+            curr_col--;
+        }
+        return U;
+    }
+    friend ColumnVector *solve(AugmentedMatrix<SquareMatrix, ColumnVector> *A, bool debug_info);
 };
 
 double determinant_worker(SquareMatrix *A, bool debug_info)
 {
     int step = 0;
-    AugmentedMatrix *aug = new AugmentedMatrix(A, A);
-    SquareMatrix *U = (SquareMatrix *)ForwardElimination(aug, debug_info, &step);
+    AugmentedMatrix<SquareMatrix, SquareMatrix> *aug = new AugmentedMatrix(A, A);
+    SquareMatrix *U = aug->ForwardElimination(debug_info, &step)->getLeft();
     double res = 1.0;
     for (int i = 0; i < A->get_size(); i++)
         res *= U->matrix[i][i];
     return res;
 }
 
-AugmentedMatrix *ForwardElimination(AugmentedMatrix *A, bool debug_info, int *last_step)
-{
-    AugmentedMatrix *U = A;
-    int curr_col = 0;
-    int rows = A->getLeft()->get_rows();
-    for (int i = 0; i < rows; i++)
-    {
-        int row_with_max_pivot = -1;
-        double max_pivot = (*U->matrixLeft)[i][curr_col];
-        for (int j = i + 1; j < rows; j++)
-        {
-            if ((*U->matrixLeft)[j][curr_col] == 0.0)
-                continue;
-            if (abs((*U->matrixLeft)[j][curr_col]) > abs(max_pivot))
-            {
-                row_with_max_pivot = j;
-                max_pivot = (*U->matrixLeft)[j][curr_col];
-            }
-        }
-        if (row_with_max_pivot != -1)
-        {
-            if (debug_info)
-                cout << "step #" << *last_step << ": permutation\n";
-            PermutationMatrix *P = new PermutationMatrix(rows, i, row_with_max_pivot);
-            U->matrixLeft = (*(Matrix *)P) * (*U->matrixLeft);
-            U->matrixRight = (*(Matrix *)P) * (*U->matrixRight);
-            if (debug_info)
-            {
-                cout << *U;
-                (*last_step)++;
-            }
-        }
-        for (int j = i + 1; j < rows; j++)
-        {
-            if ((*U->matrixLeft)[j][curr_col] == 0.0 || (*U->matrixLeft)[i][curr_col] == 0.0)
-                continue;
-            if (debug_info)
-                cout << "step #" << *last_step << ": elimination\n";
-            EliminationMatrix *E = new EliminationMatrix(rows, j, i, (*U->matrixLeft)[j][curr_col] / (*U->matrixLeft)[i][curr_col]);
-            U->matrixLeft = (*(Matrix *)E) * (*U->matrixLeft);
-            U->matrixRight = (*(Matrix *)E) * (*U->matrixRight);
-            if (debug_info)
-            {
-                cout << *U;
-                (*last_step)++;
-            }
-        }
-        curr_col++;
-    }
-    return U;
-}
-
-AugmentedMatrix *BackwardElimination(AugmentedMatrix *A, bool debug_info, int *last_step)
-{
-    AugmentedMatrix *U = A;
-    int curr_col = A->matrixLeft->get_cols() - 1;
-    int rows = A->matrixLeft->get_rows();
-    for (int i = rows - 1; i >= 0; i--)
-    {
-        for (int j = i - 1; j >= 0; j--)
-        {
-            if ((*U->matrixLeft)[j][curr_col] == 0.0 || (*U->matrixLeft)[i][curr_col] == 0.0)
-                continue;
-            if (debug_info)
-                cout << "step #" << *last_step << ": elimination\n";
-            EliminationMatrix *E = new EliminationMatrix(rows, j, i, (*U->matrixLeft)[j][curr_col] / (*U->matrixLeft)[i][curr_col]);
-            U->matrixLeft = (*(Matrix *)E) * (*U->matrixLeft);
-            U->matrixRight = (*(Matrix *)E) * (*U->matrixRight);
-            if (debug_info)
-            {
-                cout << *U;
-                (*last_step)++;
-            }
-        }
-        curr_col--;
-    }
-    return U;
-}
-
 SquareMatrix *inverse_worker(SquareMatrix *A, bool debug_info)
 {
     IdentityMatrix *I = new IdentityMatrix(A->get_size());
+    SquareMatrix *I_matrix = I;
     if (debug_info)
         cout << "step #0: Augmented Matrix\n";
-    AugmentedMatrix *aug = new AugmentedMatrix(A, I);
+    AugmentedMatrix<SquareMatrix, SquareMatrix> *aug = new AugmentedMatrix(A, I_matrix);
     if (debug_info)
         cout << *aug;
 
     int last_step = 1;
     if (debug_info)
         cout << "Direct way:\n";
-    AugmentedMatrix *B = ForwardElimination(aug, debug_info, &last_step);
+    AugmentedMatrix<SquareMatrix, SquareMatrix> *B = aug->ForwardElimination(debug_info, &last_step);
 
     if (debug_info)
         cout << "Way back:\n";
-    AugmentedMatrix *C = BackwardElimination(B, debug_info, &last_step);
+    AugmentedMatrix<SquareMatrix, SquareMatrix> *C = B->BackwardElimination(debug_info, &last_step);
 
     if (debug_info)
         cout << "Diagonal normalization:\n";
@@ -373,7 +373,37 @@ SquareMatrix *inverse_worker(SquareMatrix *A, bool debug_info)
     return (SquareMatrix *)C->getRight();
 }
 
-SquareMatrix *read_matrix()
+ColumnVector *solve(AugmentedMatrix<SquareMatrix, ColumnVector> *A, bool debug_info)
+{
+    if (debug_info)
+    {
+        cout << "step #0:\n";
+        cout << *A;
+    }
+
+    int last_step = 1;
+    AugmentedMatrix<SquareMatrix, ColumnVector> *B = A->ForwardElimination(debug_info, &last_step);
+    AugmentedMatrix<SquareMatrix, ColumnVector> *C = B->BackwardElimination(debug_info, &last_step);
+
+    if (debug_info)
+        cout << "Diagonal normalization:\n";
+    for (int i = 0; i < C->getLeft()->get_rows(); i++)
+    {
+        double pivot = (*C->getLeft())[i][i];
+        if (pivot == 0.0)
+            continue;
+        for (int j = 0; j < C->getLeft()->get_cols(); j++)
+            (*C->getLeft())[i][j] /= pivot;
+        for (int j = 0; j < C->getRight()->get_cols(); j++)
+            (*C->getRight())[i][j] /= pivot;
+    }
+    if (debug_info)
+        cout << *C;
+
+    return A->matrixRight;
+}
+
+AugmentedMatrix<SquareMatrix, ColumnVector> *read_matrix()
 {
     int size;
     cin >> size;
@@ -381,18 +411,33 @@ SquareMatrix *read_matrix()
     SquareMatrix *matrix = new SquareMatrix(size);
     cin >> *matrix;
 
-    return matrix;
+    int rows;
+    cin >> rows;
+
+    ColumnVector *column = new ColumnVector(rows);
+    cin >> *column;
+
+    AugmentedMatrix<SquareMatrix, ColumnVector> *aug = new AugmentedMatrix(matrix, column);
+
+    return aug;
 }
 
 int main(void)
 {
     cout << fixed << setprecision(2);
 
-    SquareMatrix *A = read_matrix();
+    AugmentedMatrix<SquareMatrix, ColumnVector> *A = read_matrix();
 
-    SquareMatrix *inverse = A->inverse(true);
-    cout << "result:\n"
-         << *inverse;
+    if (A->getLeft()->determinant(false) == 0.0)
+    {
+        cout << "Matrix is non-singular\n";
+    }
+    else
+    {
+        ColumnVector *solution = solve(A, true);
+        cout << "result:\n"
+             << *solution;
+    }
 
     return 0;
 }
