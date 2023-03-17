@@ -2,4 +2,6 @@
 
 *.exe
 *.o
+
 *.txt
+!AGLA_joint_assignment_2/points.txt
