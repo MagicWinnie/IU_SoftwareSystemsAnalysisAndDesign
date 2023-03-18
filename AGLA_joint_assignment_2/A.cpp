@@ -460,11 +460,14 @@ int main(void)
     fprintf(pipe, "%s\n", "set terminal png");
     fprintf(pipe, "%s\n", "set output 'output.png'");
     fprintf(pipe, "%s\n", "set title \"Least Squares Approximation\"");
+    fprintf(pipe, "%s\n", "set key noautotitle");
     fprintf(pipe, "%s\n", "set autoscale xy");
     fprintf(pipe, "%s\n", "set offsets 0.05, 0.05, 0.05, 0.05");
     string func;
     for (int i = 0; i <= n; i++)
     {
+        if (*A_4->operator[](i) < 0 and i != 0)
+            func = func.substr(0, func.size() - 1);
         func += to_string(*A_4->operator[](i));
         func += '*';
         func += "x**";
@@ -472,6 +475,7 @@ int main(void)
         if (i != n)
             func += '+';
     }
+    cout << func << endl;
     fprintf(pipe, "plot %s lw 3, '-' w p pt 7 ps 2\n", func.c_str());
     for (int i = 0; i < m; i++)
         fprintf(pipe, "%lf %lf\n", t[i], *b->operator[](i));
