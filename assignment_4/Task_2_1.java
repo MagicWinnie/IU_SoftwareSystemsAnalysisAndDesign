@@ -3,7 +3,11 @@
 
 /*
 * Single-responsibility principle:
-        This principle is not broken in any of the classes.
+        This principle is violated in Employee class.
+        There is no need to know the hourly rate for salaried employee and vice versa.
+        Let us move the hourlyRate and hoursWorked from Employee to HourlyEmployee and
+        move the salary from Employee to SalariedEmployee.
+        So the base class stores only the name of the employee.
 * Open–closed principle:
         This principle is violated in Payroll class.
         There is no need in two methods that work with HourlyEmployee and SalariedEmployee separately.
@@ -13,11 +17,7 @@
 * Liskov substitution principle:
         This principle is not broken in any of the classes.
 * Interface segregation principle:
-        This principle is violated in Employee class.
-        There is no need to know the hourly rate for salaried employee and vice versa.
-        Let us move the hourlyRate and hoursWorked from Employee to HourlyEmployee and
-        move the salary from Employee to SalariedEmployee.
-        So the base class stores only the name of the employee.
+        This principle is not broken in any of the classes.
 * Dependency inversion principle:
         This principle is not broken in any of the classes.
  */
