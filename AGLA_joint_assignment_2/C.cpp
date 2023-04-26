@@ -607,9 +607,9 @@ void solve(AugmentedMatrix<SquareMatrix, ColumnVector> A, double error, bool deb
         cout << I_B_inv;
     }
 
-    ColumnVector x_old(beta.get_rows()), x(beta.get_rows());
-    for (int i = 0; i < beta.get_rows(); i++)
-        x_old[i][0] = A.getRight()[i][0] / A.getLeft()[i][i];
+    ColumnVector x_old(beta.get_rows());
+    ColumnVector x(beta.get_rows());
+    x_old = beta;
 
     int it_count = 0;
     while (true)
