@@ -66,6 +66,11 @@ int main(void)
     FILE *pipe = popen(GNUPLOT_NAME, "w");
 #endif
 #if USE_GNUPLOT
+    ofstream out("points.txt");
+    out << fixed << setprecision(4);
+    for (int i = 0; i <= N; i++)
+        out << T_arr[i] << '\t' << V_arr[i] << '\t' << K_arr[i] << '\n';
+    out.close();
     // Draw v(t), k(t)
     fprintf(pipe, "%s\n", "set terminal png size 1920, 1080 font \"Calibri,24\"");
     fprintf(pipe, "%s\n", "set output 'v_t__k_t.png'");
@@ -73,23 +78,21 @@ int main(void)
     fprintf(pipe, "%s\n", "set key noautotitle");
     fprintf(pipe, "%s\n", "set autoscale xy");
     fprintf(pipe, "%s\n", "set offsets 0.05, 0.05, 0.05, 0.05");
-    fprintf(pipe, "%s\n", "set xlabel \"t\"");
-    fprintf(pipe, "%s\n", "set ylabel \"v(t), k(t)\"");
-    ofstream out("v_t__k_t.txt");
-    for (int i = 0; i <= N; i++)
-        out << T_arr[i] << ' ' << V_arr[i] << ' ' << K_arr[i] << '\n';
-    out.close();
-    fprintf(pipe, "%s\n", "plot \"v_t__k_t.txt\" using 1:2 title 'v(t)' w linespoints pointtype 7, \"v_t__k_t.txt\" using 1:3 title 'k(t)' w linespoints pointtype 7");
+    fprintf(pipe, "%s\n", "set xlabel \"Time\"");
+    fprintf(pipe, "%s\n", "set ylabel \"No. of predators and preys\"");
+    fprintf(pipe, "%s\n", "plot \"points.txt\" u 1:2 t 'v(t)' w linespoints pointtype 7, \"points.txt\" u 1:3 t 'k(t)' w linespoints pointtype 7");
     fflush(pipe);
     // Draw v(k)
     fprintf(pipe, "%s\n", "set output 'v_k.png'");
-    fprintf(pipe, "%s\n", "set xlabel \"k\"");
-    fprintf(pipe, "%s\n", "set ylabel \"v\"");
-    out.open("v_k.txt");
-    for (int i = 0; i <= N; i++)
-        out << V_arr[i] << ' ' << K_arr[i] << '\n';
-    out.close();
-    fprintf(pipe, "%s\n", "plot \"v_k.txt\" using 1:2 title 'v(k)' w linespoints pointtype 7");
+    fprintf(pipe, "%s\n", "set xlabel \"Number of predators\"");
+    fprintf(pipe, "%s\n", "set ylabel \"Number of preys\"");
+    fprintf(pipe, "%s\n", "plot \"points.txt\" u 3:2 t 'v(k)' w linespoints pointtype 7");
+    fflush(pipe);
+    // Draw k(v)
+    fprintf(pipe, "%s\n", "set output 'k_v.png'");
+    fprintf(pipe, "%s\n", "set xlabel \"Number of preys\"");
+    fprintf(pipe, "%s\n", "set ylabel \"Number of predators\"");
+    fprintf(pipe, "%s\n", "plot \"points.txt\" u 2:3 t 'k(v)' w linespoints pointtype 7");
     fflush(pipe);
 #endif
 #if (defined(WIN32) || defined(_WIN32)) && USE_GNUPLOT
