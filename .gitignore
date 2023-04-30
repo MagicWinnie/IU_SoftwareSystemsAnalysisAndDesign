@@ -7,3 +7,4 @@ build/
 
 *.txt
 !AGLA_joint_assignment_2/points.txt
+!AGLA_joint_assignment_3/input.txt
