@@ -22,7 +22,8 @@ class Channel {
 
     void publish(Content content) {
         for (User user : subscribers) {
-            user.update(name, content);
+            String notification = "Channel " + name + " " + content.getNotification();
+            user.update(notification);
         }
     }
 
@@ -38,8 +39,8 @@ class User {
         this.name = name;
     }
 
-    public void update(String channelName, Content content) {
-        System.out.println(name + ": Channel " + channelName + " " + content.getNotification());
+    public void update(String notification) {
+        System.out.println(name + ": " + notification);
     }
 
     public String getName() {
