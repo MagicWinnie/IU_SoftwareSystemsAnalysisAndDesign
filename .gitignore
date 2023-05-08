@@ -4,6 +4,7 @@ build/
 
 *.exe
 *.o
+*.zip
 
 *.txt
 !AGLA_joint_assignment_2/points.txt
